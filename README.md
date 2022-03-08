@@ -37,9 +37,9 @@ optional arguments:
   --eth-private-key ETH_PRIVATE_KEY
                         Ethereum private key(s) to use
   --autoline-address AUTOLINE_ADDRESS
-                        Address of AutoLine contract (default: 0xC7Bdd1F2B16447dcf3dE045C4a039A60EC2f0ba3)
+                        Address of AutoLine contract (default: 0xe6eC07969F626648cFb20D8C77E5630E4468D0DB)
   --autoline-job-address AUTOLINE_JOB_ADDRESS
-                        Address of AutoLineJob contract (default: 0xd3E01B079f0a787Fc2143a43E2Bdd799b2f34d9a)
+                        Address of AutoLineJob contract (default: 0x6FC1dc81D88f16486bA5F5aCe3b7B09CDE0B17B6)
   --max-errors MAX_ERRORS
                         Maximum number of allowed errors before the keeper
                         terminates (default: 100)
