@@ -45,20 +45,17 @@ class AutolineKeeper:
                             help="Ethereum private key(s) to use")
 
         parser.add_argument("--autoline-address", type=str,
-                            default="0xC7Bdd1F2B16447dcf3dE045C4a039A60EC2f0ba3",
+                            default="0xe6eC07969F626648cFb20D8C77E5630E4468D0DB",
                             help="Address of AutoLine contract")
 
         parser.add_argument("--autoline-job-address", type=str,
-                            default="0xd3E01B079f0a787Fc2143a43E2Bdd799b2f34d9a",
+                            default="0x6FC1dc81D88f16486bA5F5aCe3b7B09CDE0B17B6",
                             help="Address of AutoLineJob contract")
 
         parser.add_argument("--max-errors", type=int, default=100,
                             help="Maximum number of allowed errors before the keeper terminates (default: 100)")
 
-        parser.add_argument('--network-id', type=str, required=True,
-                            help="Unique id of network running autoline keepers")
-
-        parser.add_argument('--blocknative-api-key', type=str, required=True,
+        parser.add_argument('--blocknative-api-key', type=str, required=False,
                             help="Blocknative key")
 
         self.arguments = parser.parse_args(args)
@@ -73,8 +70,6 @@ class AutolineKeeper:
 
         self.autoline = AutoLine(self.web3, Address(self.arguments.autoline_address))
         self.autoline_job = AutoLineJob(self.web3, Address(self.arguments.autoline_job_address))
-
-        self.network_id = self.arguments.network_id
 
     def main(self):
         """ Initialize the lifecycle and enter into the Keeper Lifecycle controller.
@@ -95,7 +90,7 @@ class AutolineKeeper:
             logging.error("Number of errors reached max configured, exiting keeper")
             self.lifecycle.terminate()
         else:
-            success, address, calldata = self.autoline_job.getNextJob(self.network_id)
+            success, address, calldata = self.autoline_job.getNextJob()
             logging.info(f"Success: {success} | Address: {address} | Calldata: {calldata}")
             self.execute(success, address, calldata)
 
@@ -108,7 +103,7 @@ class AutolineKeeper:
                 every_secs=180
             )
             try:
-                receipt = self.autoline.get_transact(calldata).transact(gas_strategy=gas_strategy)
+                receipt = self.autoline.get_transact(calldata).transact()
                 if receipt is not None and receipt.successful:
                     logging.info("Exec on Autoline done!")
                 else:
@@ -161,8 +156,8 @@ class AutoLineJob(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
-    def getNextJob(self, network_id: str):
-        return self._contract.functions.getNextJob(network_id).call()
+    def getNextJob(self):
+        return self._contract.functions.getNextJob().call()
 
     def __repr__(self):
         return f"AutoLineJob('{self.address}')"
