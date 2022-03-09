@@ -18,7 +18,7 @@ import requests
 import eth_utils
 
 from web3 import Web3, HTTPProvider
-from pymaker.keys import register_private_key
+from pymaker.keys import register_keys
 from pymaker.lifecycle import Lifecycle
 from pymaker.gas import GeometricGasPrice
 from pymaker import Contract, Address, Transact
@@ -32,7 +32,8 @@ class AutolineKeeper:
     def __init__(self, args: list, **kwargs):
         parser = argparse.ArgumentParser(prog='autoline-keeper')
 
-        parser.add_argument("--rpc-url", type=str, required=True,
+        parser.add_argument("--rpc-url", type=str,
+                            default="https://sherpax-testnet.chainx.org/rpc",
                             help="JSON-RPC host URL")
 
         parser.add_argument("--rpc-timeout", type=int, default=10,
@@ -41,15 +42,16 @@ class AutolineKeeper:
         parser.add_argument("--eth-from", type=str, required=True,
                             help="Ethereum account from which to send transactions")
 
-        parser.add_argument("--eth-private-key", type=str, required=True,
-                            help="Ethereum private key(s) to use")
+        parser.add_argument("--eth-keystore", type=str, required=True,
+                            help="Ethereum keystore to use")
 
-        parser.add_argument("--autoline-address", type=str,
-                            default="0xe6eC07969F626648cFb20D8C77E5630E4468D0DB",
+        parser.add_argument("--eth-password", type=str, required=True,
+                            help="Ethereum password to use")
+
+        parser.add_argument("--autoline-address", type=str, required=True,
                             help="Address of AutoLine contract")
 
-        parser.add_argument("--autoline-job-address", type=str,
-                            default="0x6FC1dc81D88f16486bA5F5aCe3b7B09CDE0B17B6",
+        parser.add_argument("--autoline-job-address", type=str, required=True,
                             help="Address of AutoLineJob contract")
 
         parser.add_argument("--max-errors", type=int, default=100,
@@ -61,9 +63,12 @@ class AutolineKeeper:
         self.arguments = parser.parse_args(args)
 
         self.web3 = kwargs['web3'] if 'web3' in kwargs else Web3(HTTPProvider(endpoint_uri=self.arguments.rpc_url,
-                                                                              request_kwargs={"timeout": self.arguments.rpc_timeout}))
+                                                                              request_kwargs={
+                                                                                  "timeout": self.arguments.rpc_timeout}))
         self.web3.eth.defaultAccount = self.arguments.eth_from
-        register_private_key(self.web3, self.arguments.eth_private_key)
+
+        register_keys(self.web3,
+                      [f"key_file={self.arguments.eth_keystore},pass_file={self.arguments.eth_password}"])
 
         self.max_errors = self.arguments.max_errors
         self.errors = 0
@@ -115,7 +120,6 @@ class AutolineKeeper:
 
         else:
             logging.info("No update available")
-
 
     @staticmethod
     def get_initial_tip(arguments) -> int:
@@ -183,7 +187,8 @@ class AutoLine(Contract):
 
     def get_transact(self, calldata: str) -> Transact:
         function, params = self._contract.decode_function_input(calldata)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, function.fn_name, list(params.values()))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, function.fn_name,
+                        list(params.values()))
 
     def __repr__(self):
         return f"AutoLine('{self.address}')"
